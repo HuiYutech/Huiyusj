@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>智能销售单生成器 - 最终优化版</title>
+    <title>智能销售单生成器 - A4标准版</title>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
@@ -16,31 +16,32 @@
             background: #eef2f5;
             font-family: 'Segoe UI', '微软雅黑', Roboto, sans-serif;
             margin: 0;
-            padding: 30px 20px;
+            padding: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            /* 强制保持最小宽度，防止手机端自动换行 */
-            min-width: 1000px;
             overflow-x: auto;
         }
+        /* 销售单容器：固定宽度210mm (A4标准宽度) */
         .invoice-container {
             position: relative;
-            max-width: 1280px;
-            width: 100%;
+            width: 210mm;
+            min-width: 210mm;
             background: white;
             box-shadow: 0 20px 35px rgba(0, 0, 0, 0.1);
             border-radius: 20px;
-            padding: 24px 28px 36px 28px;
+            padding: 12mm 15mm 15mm 15mm;
             margin-bottom: 24px;
             overflow: visible;
             user-select: none;
         }
         @media print {
-            body { background: white; padding: 0; margin: 0; min-width: 0; overflow-x: visible; }
-            .invoice-container { box-shadow: none; padding: 0.2in; margin: 0; border-radius: 20px !important; overflow: hidden !important; }
+            body { background: white; padding: 0; margin: 0; }
+            .invoice-container { box-shadow: none; padding: 0; margin: 0; border-radius: 0 !important; width: 100%; min-width: auto; }
             .btn-group, .control-panel, .remark-box button { display: none !important; }
+            .brand-overlay, .company-stamp { opacity: 0.9 !important; }
         }
+        /* 品牌图（绝对定位，可在整个容器内移动） */
         .brand-overlay {
             position: absolute;
             z-index: 20;
@@ -56,6 +57,20 @@
             cursor: grabbing;
             opacity: 0.7;
         }
+        /* 公司章：独立绝对定位，覆盖整个容器，z-index最高 */
+        .company-stamp {
+            position: absolute;
+            object-fit: contain;
+            opacity: 0.85;
+            z-index: 9999;
+            cursor: grab;
+            background: transparent;
+            pointer-events: auto;
+            touch-action: none;
+            left: 30px;
+            top: 530px;   /* 默认位于底部制单人区域附近，避免覆盖关键信息 */
+            display: none;
+        }
         .sign-line {
             position: relative;
             flex-shrink: 0;
@@ -64,19 +79,9 @@
             padding: 4px 8px;
             white-space: nowrap;
         }
-        .company-stamp {
-            position: absolute;
-            object-fit: contain;
-            opacity: 0.85;
-            z-index: 10;
-            cursor: grab;
-            background: transparent;
-            pointer-events: auto;
-            touch-action: none;
-        }
         .control-panel {
-            max-width: 1280px;
-            width: 100%;
+            width: 210mm;
+            min-width: 210mm;
             background: white;
             border-radius: 24px;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
@@ -116,7 +121,7 @@
         .tab-pane.active-pane {
             display: block;
         }
-        /* ========== 基本资料 - 所有输入框等宽 ========== */
+        /* ========== 基本资料 ========== */
         .info-edit-panel {
             display: flex;
             flex-wrap: wrap;
@@ -277,18 +282,15 @@
             pointer-events: none;
             background: #f1f5f9;
         }
-        /* 商标管理 - 强制并排，不换行，超出滚动 */
+        /* 商标管理 - 上下两行排列（垂直） */
         .img-manager-group {
             display: flex;
-            flex-wrap: nowrap;      /* 绝对不换行 */
+            flex-direction: column;
             gap: 24px;
-            justify-content: flex-start;
-            overflow-x: auto;
-            padding-bottom: 8px;
+            align-items: flex-start;
         }
         .img-card {
-            flex: 0 0 auto;         /* 固定宽度，不伸缩 */
-            width: 420px;
+            width: 100%;
             background: #f9fafb;
             padding: 16px 20px;
             border-radius: 20px;
@@ -400,11 +402,11 @@
             border-collapse: collapse;
             font-size: 14px;
             font-family: 'Segoe UI', 'Consolas', monospace;
-            min-width: 650px;
+            min-width: 500px;
         }
         .sales-table th, .sales-table td {
             border: 2px solid #1e2f3a;
-            padding: 10px 8px;
+            padding: 8px 6px;
             vertical-align: middle;
             text-align: center;
         }
@@ -423,26 +425,26 @@
         /* 销售单头部及合计区域 */
         .header-info {
             text-align: center;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
         }
-        .company-title { font-size: 28px; font-weight: 800; color: #0b3b4f; margin-bottom: 6px; }
-        .sub-title { font-size: 14px; color: #2c3e50; }
+        .company-title { font-size: 24px; font-weight: 800; color: #0b3b4f; margin-bottom: 4px; }
+        .sub-title { font-size: 13px; color: #2c3e50; }
         .title-divider {
-            border-bottom: 3px solid #1a4d6b;
-            margin-bottom: 16px;
+            border-bottom: 2px solid #1a4d6b;
+            margin-bottom: 12px;
         }
         .meta-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
             background: #f4f7fa;
-            padding: 12px 20px;
-            border-radius: 16px;
-            margin: 18px 0 16px 0;
-            font-size: 14px;
+            padding: 8px 15px;
+            border-radius: 12px;
+            margin: 12px 0 12px 0;
+            font-size: 13px;
             font-weight: 500;
             border: 1px solid #bac8d3;
-            gap: 16px;
+            gap: 12px;
             flex-wrap: nowrap;
         }
         .meta-item {
@@ -456,72 +458,72 @@
         }
         .static-text {
             background: white;
-            padding: 5px 14px;
+            padding: 4px 12px;
             border-radius: 28px;
             border: 1px solid #b9cad6;
             color: #1f3b4c;
             white-space: nowrap;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 500;
         }
         #customerNameDisplay {
-            font-size: 16px;
-            padding: 6px 18px;
+            font-size: 15px;
+            padding: 5px 16px;
         }
         .total-row {
-            margin-top: 20px;
+            margin-top: 16px;
             background: #f8f9fc;
-            padding: 12px 20px;
+            padding: 10px 15px;
             border-radius: 12px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 16px;
+            gap: 12px;
             border: 1px solid #dce5ec;
             flex-wrap: nowrap;
         }
         .total-left {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
             flex-wrap: nowrap;
         }
         .total-left strong {
-            font-size: 14px;
+            font-size: 13px;
             color: #2c3e50;
             white-space: nowrap;
         }
         .amount-chinese {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 700;
             color: #1e4663;
             background: white;
-            padding: 4px 14px;
+            padding: 3px 12px;
             border-radius: 28px;
             border: 1px solid #cbdbe0;
             font-family: '楷体', 'Microsoft YaHei', monospace;
             white-space: nowrap;
         }
         .total-right {
-            font-size: 24px;
+            font-size: 20px;
             color: #c0392b;
             background: white;
-            padding: 4px 18px;
+            padding: 3px 15px;
             border-radius: 40px;
             font-family: monospace;
             font-weight: 800;
             border: 1px solid #d1d9e0;
             white-space: nowrap;
         }
-        /* 底部签章区域：强制一行，超出滚动 */
+        /* 底部签章区域 */
         .sign-stamp {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-top: 30px;
+            margin-top: 24px;
             border-top: 2px solid #3c5a6f;
-            padding-top: 20px;
-            gap: 20px;
+            padding-top: 16px;
+            gap: 15px;
             flex-wrap: nowrap;
             overflow-x: auto;
             width: 100%;
@@ -534,11 +536,12 @@
             flex-shrink: 0;
             display: flex;
             align-items: center;
-            gap: 24px;
-            text-align: right;
+            gap: 20px;
+            justify-content: flex-start;
+            text-align: left;
         }
         .sign-note {
-            font-size: 13px;
+            font-size: 12px;
             color: #4a5568;
             letter-spacing: 1px;
             white-space: nowrap;
@@ -546,26 +549,26 @@
         .sign-invoice-no {
             font-weight: 500;
             color: #1f3b4c;
-            font-size: 14px;
+            font-size: 13px;
             white-space: nowrap;
         }
         .remark-box {
             background: #f8f9fc;
-            padding: 10px 16px;
+            padding: 8px 15px;
             border-radius: 12px;
-            margin: 18px 0 6px;
-            font-size: 14px;
+            margin: 14px 0 4px;
+            font-size: 13px;
             border: 1px solid #dce5ec;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
             flex-wrap: wrap;
         }
         .remark-box button {
             background: transparent;
             color: #b45f1b;
-            font-size: 12px;
-            padding: 4px 12px;
+            font-size: 11px;
+            padding: 3px 10px;
             border: 1px solid #e2b87a;
             border-radius: 40px;
             cursor: pointer;
@@ -575,7 +578,7 @@
         }
         .btn-group {
             display: flex;
-            gap: 20px;
+            gap: 15px;
             justify-content: center;
             margin-top: 20px;
             flex-wrap: wrap;
@@ -583,8 +586,8 @@
         .btn-group button {
             border: none;
             color: white;
-            font-size: 16px;
-            padding: 10px 28px;
+            font-size: 14px;
+            padding: 8px 22px;
             border-radius: 48px;
             cursor: pointer;
             font-weight: bold;
@@ -596,16 +599,27 @@
         #downloadPdfBtn:hover { background: #c9302c; }
         #printBtn { background: #5f6c7a; }
         #printBtn:hover { background: #4a5568; }
-        /* 移除旧的独立底部注释 */
         .footer-note-bottom {
             display: none;
         }
-        /* 手机端无任何特殊换行规则，完全保持桌面布局，超出滚动 */
+        /* 手机端滚动适配 */
+        @media (max-width: 220mm) {
+            body {
+                padding: 10px;
+            }
+            .invoice-container, .control-panel {
+                margin-left: auto;
+                margin-right: auto;
+            }
+        }
     </style>
 </head>
 <body>
 <div class="invoice-container" id="invoiceContainer">
     <img id="brandImage" class="brand-overlay" src="" alt="品牌图" style="display: none;">
+    <!-- 公司章独立，作为容器直接子元素，可覆盖整个区域 -->
+    <img id="companyStamp" class="company-stamp" src="" alt="公司章" style="display: none;">
+    
     <div class="header-info">
         <div class="company-title" id="companyTitle">XXX科技有限公司销售单</div>
         <div class="sub-title" id="contactInfo">联系电话：000-000000 &nbsp;|&nbsp; 联系人：某某某</div>
@@ -617,7 +631,7 @@
     </div>
     <div class="table-wrapper">
         <table class="sales-table" id="salesTable">
-            <thead><tr><th style="width:50px">序号</th><th>名称</th><th style="width:70px">单位</th><th style="width:80px">数量</th><th style="width:80px">单价(元)</th><th style="width:90px">金额(元)</th><th>备注/类别</th></thead>
+            <thead><tr><th style="width:45px">序号</th><th>名称</th><th style="width:60px">单位</th><th style="width:70px">数量</th><th style="width:70px">单价(元)</th><th style="width:80px">金额(元)</th><th>备注/类别</th></thead>
             <tbody id="tableBody"></tbody>
         </table>
     </div>
@@ -631,12 +645,10 @@
     </div>
     <div class="remark-box"><strong>备  注：</strong> <span id="remarkText">请填写备注信息</span><button id="editRemarkBtn">✎ 编辑</button></div>
     
-    <!-- 底部区域：左侧制单人，右侧注释+单据编号（强制一行） -->
     <div class="sign-stamp">
         <div class="sign-left">
-            <div class="sign-line" id="signerContainer">
+            <div class="sign-line">
                 <span id="signerName">制单人：某某某</span>
-                <img id="companyStamp" class="company-stamp" src="" alt="公司章" style="display: none;">
             </div>
         </div>
         <div class="sign-right-group">
@@ -855,39 +867,44 @@
     }
     function setBrandPos(left, top) { brandImage.style.left = left + 'px'; brandImage.style.top = top + 'px'; }
     function getStampPos() {
-        if (companyStamp.style.transform === 'translate(-50%, -50%)' || !companyStamp.style.left || companyStamp.style.left === '50%') {
-            const parentRect = companyStamp.parentElement.getBoundingClientRect();
-            const rect = companyStamp.getBoundingClientRect();
-            const left = rect.left - parentRect.left;
-            const top = rect.top - parentRect.top;
-            companyStamp.style.transform = 'none';
-            companyStamp.style.left = left + 'px';
-            companyStamp.style.top = top + 'px';
-        }
         let left = parseFloat(companyStamp.style.left), top = parseFloat(companyStamp.style.top);
-        if (isNaN(left)) left = 50;
-        if (isNaN(top)) top = 50;
+        if (isNaN(left)) left = 30;
+        if (isNaN(top)) top = 530;
         return { left, top };
     }
-    function setStampPos(left, top) {
-        companyStamp.style.transform = 'none';
-        companyStamp.style.left = left + 'px';
-        companyStamp.style.top = top + 'px';
+    function setStampPos(left, top) { 
+        companyStamp.style.left = left + 'px'; 
+        companyStamp.style.top = top + 'px'; 
     }
     function setBrandSize() { let w = parseInt(brandWidthInput.value,10)||120; brandImage.style.width = w + 'px'; brandImage.style.height = 'auto'; }
     function setStampSize() { let w = parseInt(stampWidthInput.value,10)||150; companyStamp.style.width = w + 'px'; companyStamp.style.height = 'auto'; }
+    
     uploadBrandBtn.addEventListener('click',()=>brandInput.click());
     brandInput.addEventListener('change',(e)=>{ const file=e.target.files[0]; if(file && (file.type==='image/png'||file.type==='image/jpeg'||file.type==='image/jpg')){ const reader=new FileReader(); reader.onload=ev=>{ brandImage.src=ev.target.result; brandImage.style.display='inline-block'; setBrandPos(20,0); setBrandSize(); }; reader.readAsDataURL(file); } else alert('请上传JPG/PNG图片'); });
     removeBrandBtn.addEventListener('click',()=>{ brandImage.src=''; brandImage.style.display='none'; brandInput.value=''; });
     applyBrandSizeBtn.addEventListener('click',setBrandSize);
+    
     uploadStampBtn.addEventListener('click',()=>stampInput.click());
-    stampInput.addEventListener('change',(e)=>{ const file=e.target.files[0]; if(file && (file.type==='image/png'||file.type==='image/jpeg')){ const reader=new FileReader(); reader.onload=ev=>{ companyStamp.src=ev.target.result; companyStamp.style.display='inline-block'; companyStamp.style.transform = 'translate(-50%, -50%)'; companyStamp.style.left = '50%'; companyStamp.style.top = '50%'; setStampSize(); }; reader.readAsDataURL(file); } else alert('请上传JPG/PNG图片'); });
+    stampInput.addEventListener('change',(e)=>{ 
+        const file=e.target.files[0]; 
+        if(file && (file.type==='image/png'||file.type==='image/jpeg')){ 
+            const reader=new FileReader(); 
+            reader.onload=ev=>{ 
+                companyStamp.src=ev.target.result; 
+                companyStamp.style.display='inline-block'; 
+                setStampPos(30, 530);
+                setStampSize(); 
+            }; 
+            reader.readAsDataURL(file); 
+        } else alert('请上传JPG/PNG图片'); 
+    });
     removeStampBtn.addEventListener('click',()=>{ companyStamp.src=''; companyStamp.style.display='none'; stampInput.value=''; });
     applyStampSizeBtn.addEventListener('click',setStampSize);
+    
     makeDraggable(brandImage, getBrandPos, setBrandPos);
     makeDraggable(companyStamp, getStampPos, setStampPos);
     setBrandPos(20,0); setBrandSize();
-    companyStamp.style.transform = 'translate(-50%, -50%)'; companyStamp.style.left = '50%'; companyStamp.style.top = '50%'; setStampSize();
+    setStampPos(30, 530); setStampSize();
 
     // 业务函数
     function syncEditableInfo() {
@@ -1007,8 +1024,8 @@
                 const cells = row.querySelectorAll('td, th');
                 if (cells.length >= 7) {
                     const remarkCell = cells[6];
-                    remarkCell.style.minWidth = '100px';
-                    remarkCell.style.maxWidth = '200px';
+                    remarkCell.style.minWidth = '80px';
+                    remarkCell.style.maxWidth = '150px';
                     remarkCell.style.whiteSpace = 'normal';
                 }
             });
@@ -1016,7 +1033,6 @@
         const style = document.createElement('style');
         style.textContent = `
             .sales-table td, .sales-table th { white-space: normal !important; word-break: break-word !important; line-height: 1.4 !important; }
-            .sales-table td:last-child, .sales-table th:last-child { min-width: 100px; max-width: 200px; }
             .table-wrapper { overflow-x: visible !important; border-radius: 0 !important; }
         `;
         if (!clone.querySelector('head')) {
@@ -1082,13 +1098,13 @@
             if(!win){ alert('请允许弹窗'); return; } 
             clone.style.width='100%'; clone.style.margin='0 auto'; 
             const style = document.createElement('style');
-            style.textContent = '.invoice-container { border-radius: 20px !important; overflow: hidden !important; }';
+            style.textContent = '.invoice-container { border-radius: 0 !important; overflow: hidden !important; }';
             clone.querySelector('head').appendChild(style);
             const styles=Array.from(document.styleSheets).reduce((acc,s)=>{ 
                 try{ const rules=s.cssRules||s.rules; if(rules) for(let r of rules) acc+=r.cssText; }catch(e){} 
                 return acc; 
             },''); 
-            win.document.write(`<!DOCTYPE html><html><head><title>销售单打印</title><style>${styles} .control-panel, .btn-group, .remark-box button { display:none; } .invoice-container { border-radius: 20px !important; overflow: hidden !important; }</style></head><body><div style="max-width:1280px;margin:0 auto;">${clone.outerHTML}</div></body></html>`); 
+            win.document.write(`<!DOCTYPE html><html><head><title>销售单打印</title><style>${styles} .control-panel, .btn-group, .remark-box button { display:none; } .invoice-container { border-radius: 0 !important; overflow: hidden !important; }</style></head><body><div style="max-width:210mm;margin:0 auto;">${clone.outerHTML}</div></body></html>`); 
             win.document.close(); 
             win.onload=()=>win.print(); 
         }catch(e){ alert('打印失败'); }finally{ btn.innerText=orig; btn.disabled=false; } 
