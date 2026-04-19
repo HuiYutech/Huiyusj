@@ -20,6 +20,9 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            /* 强制保持最小宽度，防止手机端自动换行 */
+            min-width: 1000px;
+            overflow-x: auto;
         }
         .invoice-container {
             position: relative;
@@ -34,7 +37,7 @@
             user-select: none;
         }
         @media print {
-            body { background: white; padding: 0; margin: 0; }
+            body { background: white; padding: 0; margin: 0; min-width: 0; overflow-x: visible; }
             .invoice-container { box-shadow: none; padding: 0.2in; margin: 0; border-radius: 20px !important; overflow: hidden !important; }
             .btn-group, .control-panel, .remark-box button { display: none !important; }
         }
@@ -274,18 +277,18 @@
             pointer-events: none;
             background: #f1f5f9;
         }
-        /* 商标管理 - 卡片靠左排列，并排显示不换行（手机端保持相同布局） */
+        /* 商标管理 - 强制并排，不换行，超出滚动 */
         .img-manager-group {
             display: flex;
-            flex-wrap: nowrap;      /* 强制不换行，保持并排 */
+            flex-wrap: nowrap;      /* 绝对不换行 */
             gap: 24px;
             justify-content: flex-start;
-            overflow-x: auto;        /* 窄屏时滚动，保证布局不崩 */
+            overflow-x: auto;
             padding-bottom: 8px;
         }
         .img-card {
-            flex: 0 0 auto;         /* 不伸缩，保持原始宽度 */
-            width: 420px;           /* 固定宽度，保证并排效果 */
+            flex: 0 0 auto;         /* 固定宽度，不伸缩 */
+            width: 420px;
             background: #f9fafb;
             padding: 16px 20px;
             border-radius: 20px;
@@ -510,7 +513,7 @@
             border: 1px solid #d1d9e0;
             white-space: nowrap;
         }
-        /* 底部签章区域：左侧制单人，右侧注释+单据编号（强制一行） */
+        /* 底部签章区域：强制一行，超出滚动 */
         .sign-stamp {
             display: flex;
             justify-content: space-between;
@@ -519,8 +522,8 @@
             border-top: 2px solid #3c5a6f;
             padding-top: 20px;
             gap: 20px;
-            flex-wrap: nowrap;       /* 强制不换行 */
-            overflow-x: auto;        /* 窄屏滚动，保证同行 */
+            flex-wrap: nowrap;
+            overflow-x: auto;
             width: 100%;
         }
         .sign-left {
@@ -597,7 +600,7 @@
         .footer-note-bottom {
             display: none;
         }
-        /* 手机端无特殊换行，保持桌面布局，支持缩放 */
+        /* 手机端无任何特殊换行规则，完全保持桌面布局，超出滚动 */
     </style>
 </head>
 <body>
