@@ -68,7 +68,7 @@
             pointer-events: auto;
             touch-action: none;
             left: 30px;
-            top: 530px;   /* 默认位于底部制单人区域附近，避免覆盖关键信息 */
+            top: 530px;
             display: none;
         }
         .sign-line {
@@ -576,12 +576,15 @@
         .remark-box button:hover {
             background: #fff1e6;
         }
+        /* 按钮组：强制横向居中，手机UA也居中 */
         .btn-group {
             display: flex;
-            gap: 15px;
             justify-content: center;
+            align-items: center;
+            gap: 15px;
             margin-top: 20px;
             flex-wrap: wrap;
+            width: 100%;
         }
         .btn-group button {
             border: none;
@@ -592,6 +595,7 @@
             cursor: pointer;
             font-weight: bold;
             transition: 0.2s;
+            white-space: nowrap;
         }
         #saveAsImageBtn { background: #2c7da0; }
         #saveAsImageBtn:hover { background: #1f5e7a; }
@@ -602,7 +606,7 @@
         .footer-note-bottom {
             display: none;
         }
-        /* 手机端滚动适配 */
+        /* 手机端滚动适配：按钮居中且父容器居中 */
         @media (max-width: 220mm) {
             body {
                 padding: 10px;
@@ -610,6 +614,9 @@
             .invoice-container, .control-panel {
                 margin-left: auto;
                 margin-right: auto;
+            }
+            .btn-group {
+                justify-content: center;
             }
         }
     </style>
